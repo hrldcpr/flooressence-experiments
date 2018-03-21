@@ -6,6 +6,7 @@
     "start": "parcel src/index.html"
   },
   "dependencies": {
+    "@types/three": "^0.89.12",
     "three": "^0.91.0"
   },
   "devDependencies": {

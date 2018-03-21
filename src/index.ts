@@ -1,29 +1,38 @@
 import * as THREE from 'three';
 
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const vertexShader = `
+  varying vec2 location;
 
-var renderer = new THREE.WebGLRenderer();
+  void main() {
+	  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    location = gl_Position.xy;
+  }
+`;
+
+const fragmentShader = `
+  varying vec2 location;
+
+  void main() {
+  	gl_FragColor = vec4((location.xy + 1.0) * 0.5, 0.0, 1.0);
+  }
+`;
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-var geometry = new THREE.BoxGeometry(1, 1, 1);
-var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-var cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+const geometry = new THREE.PlaneGeometry(2, 2);
+const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader });
+const plane = new THREE.Mesh(geometry, material);
+scene.add(plane);
 
-camera.position.z = 5;
+camera.position.z = 1;
 
-var animate = function() {
+const animate = function() {
   requestAnimationFrame(animate);
-
-  cube.rotation.x += 0.1;
-  cube.rotation.y += 0.1;
 
   renderer.render(scene, camera);
 };
