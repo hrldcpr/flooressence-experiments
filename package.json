@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "ISC",
   "scripts": {
-    "start": "parcel app/index.html"
+    "start": "parcel src/index.html"
   },
   "dependencies": {
     "three": "^0.91.0"
