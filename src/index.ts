@@ -11,10 +11,12 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
+  uniform float time;
   varying vec2 location;
 
   void main() {
-    gl_FragColor.gb = (location.xy + 1.0) * 0.5;
+    float t = (cos(time * 0.001) + 1.0) * 0.5;
+    gl_FragColor.gbr = vec3((location.xy + 1.0) * 0.5, t);
   }
 `;
 
@@ -27,15 +29,18 @@ document.body.appendChild(renderer.domElement);
 
 const geometry = new THREE.PlaneBufferGeometry(2, 2);
 const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader });
+material.uniforms.time = { value: 0 };
 const plane = new THREE.Mesh(geometry, material);
 scene.add(plane);
 
 camera.position.z = 1;
 
-const animate = function() {
+const animate = function(time) {
   requestAnimationFrame(animate);
+
+  material.uniforms.time.value = time;
 
   renderer.render(scene, camera);
 };
 
-animate();
+animate(performance.now());
