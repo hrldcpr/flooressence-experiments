@@ -4,7 +4,7 @@ const vertexShader = `
   varying vec2 location;
 
   void main() {
-	  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     location = gl_Position.xy;
   }
 `;
@@ -13,7 +13,7 @@ const fragmentShader = `
   varying vec2 location;
 
   void main() {
-  	gl_FragColor = vec4((location.xy + 1.0) * 0.5, 0.0, 1.0);
+    gl_FragColor.gb = (location.xy + 1.0) * 0.5;
   }
 `;
 
