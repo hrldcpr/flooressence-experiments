@@ -5,6 +5,7 @@ const vertexShader = `
 
   void main() {
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    // (note that for our 2d projection, projectionMatrix * modelViewMatrix is just the identity)
     location = gl_Position.xy;
   }
 `;
