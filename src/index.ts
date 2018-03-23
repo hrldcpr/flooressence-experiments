@@ -40,7 +40,9 @@ function init() {
     1,
     3000
   );
-  camera.position.set(0, 200, 350);
+  camera.position.set(0, 200, 0);
+  camera.up.set(0, 0, 1);
+  camera.lookAt(0, 0, 0);
 
   scene = new THREE.Scene();
 
