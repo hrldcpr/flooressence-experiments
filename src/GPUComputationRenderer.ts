@@ -170,8 +170,6 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     passThruUniforms.texture.value = input;
 
     this.doRenderTarget(passThruShader, output);
-
-    passThruUniforms.texture.value = null;
   };
 
   this.doRenderTarget = function(material, output) {
