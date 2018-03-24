@@ -30,13 +30,15 @@ function init() {
   container = document.createElement('div');
   document.body.appendChild(container);
 
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
+  camera = new THREE.OrthographicCamera(
+    -BOUNDS / 2,
+    BOUNDS / 2,
+    BOUNDS / 2,
+    -BOUNDS / 2,
     1,
-    3000
+    1000
   );
-  camera.position.set(0, 200, 0);
+  camera.position.set(0, 100, 0);
   camera.up.set(0, 0, 1);
   camera.lookAt(0, 0, 0);
 
