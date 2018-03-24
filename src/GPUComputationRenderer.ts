@@ -8,20 +8,20 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
 
   this.currentTextureIndex = 0;
 
-  var scene = new THREE.Scene();
+  const scene = new THREE.Scene();
 
-  var camera = new THREE.Camera();
+  const camera = new THREE.Camera();
 
-  var passThruUniforms = {
+  const passThruUniforms = {
     texture: { value: null },
   };
 
-  var passThruShader = createShaderMaterial(
+  const passThruShader = createShaderMaterial(
     passThroughFragmentShader,
     passThruUniforms
   );
 
-  var mesh = new THREE.Mesh(
+  const mesh = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(2, 2),
     passThruShader
   );
@@ -32,9 +32,9 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     computeFragmentShader,
     initialValueTexture
   ) {
-    var material = this.createShaderMaterial(computeFragmentShader);
+    const material = this.createShaderMaterial(computeFragmentShader);
 
-    var variable = {
+    const variable = {
       name: variableName,
       initialValueTexture: initialValueTexture,
       material: material,
@@ -60,7 +60,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
       return 'No support for vertex shader textures.';
     }
 
-    for (var variable of this.variables) {
+    for (const variable of this.variables) {
       // Creates rendertargets and initialize them with input texture
       variable.renderTargets[0] = this.createRenderTarget();
       variable.renderTargets[1] = this.createRenderTarget();
@@ -74,8 +74,8 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
       );
 
       // Adds dependencies uniforms to the ShaderMaterial
-      var material = variable.material;
-      for (var depVar of variable.dependencies || []) {
+      const material = variable.material;
+      for (const depVar of variable.dependencies || []) {
         material.uniforms[depVar.name] = { value: null };
         material.fragmentShader =
           `uniform sampler2D ${depVar.name};\n` + material.fragmentShader;
@@ -88,12 +88,12 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   };
 
   this.compute = function() {
-    var currentTextureIndex = this.currentTextureIndex;
-    var nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
+    const currentTextureIndex = this.currentTextureIndex;
+    const nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
 
-    for (var variable of this.variables) {
+    for (const variable of this.variables) {
       // Sets texture dependencies uniforms
-      for (var depVar of variable.dependencies || []) {
+      for (const depVar of variable.dependencies || []) {
         variable.material.uniforms[depVar.name].value =
           depVar.renderTargets[currentTextureIndex].texture;
       }
@@ -127,7 +127,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   function createShaderMaterial(computeFragmentShader, uniforms) {
     uniforms = uniforms || {};
 
-    var material = new THREE.ShaderMaterial({
+    const material = new THREE.ShaderMaterial({
       uniforms: uniforms,
       vertexShader: passThroughVertexShader,
       fragmentShader: computeFragmentShader,
@@ -150,7 +150,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   };
 
   this.createTexture = function() {
-    var texture = new THREE.DataTexture(
+    const texture = new THREE.DataTexture(
       new Float32Array(sizeX * sizeY * 4),
       sizeX,
       sizeY,

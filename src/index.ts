@@ -5,27 +5,23 @@ import heightmapFragmentShader from './heightmap_fragment_shader';
 import waterVertexShader from './water_vertex_shader';
 
 // Texture width for simulation
-var WIDTH = 128;
-var NUM_TEXELS = WIDTH * WIDTH;
+const WIDTH = 128;
+const NUM_TEXELS = WIDTH * WIDTH;
 
 // Water size in system units
-var BOUNDS = 512;
-var BOUNDS_HALF = BOUNDS * 0.5;
+const BOUNDS = 512;
 
-var container;
-var camera, scene, renderer;
-var mouseMoved = false;
-var mouseCoords = new THREE.Vector2();
-var raycaster = new THREE.Raycaster();
+let container;
+let camera, scene, renderer;
+let mouseMoved = false;
+const mouseCoords = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
 
-var waterMesh;
-var meshRay;
-var gpuCompute;
-var heightmapVariable;
-var waterUniforms;
-
-var windowHalfX = window.innerWidth / 2;
-var windowHalfY = window.innerHeight / 2;
+let waterMesh;
+let meshRay;
+let gpuCompute;
+let heightmapVariable;
+let waterUniforms;
 
 init();
 animate();
@@ -46,11 +42,11 @@ function init() {
 
   scene = new THREE.Scene();
 
-  var sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  const sun = new THREE.DirectionalLight(0xffffff, 1.0);
   sun.position.set(300, 400, 175);
   scene.add(sun);
 
-  var sun2 = new THREE.DirectionalLight(0x40a040, 0.6);
+  const sun2 = new THREE.DirectionalLight(0x40a040, 0.6);
   sun2.position.set(-100, 350, -200);
   scene.add(sun2);
 
@@ -77,12 +73,12 @@ function init() {
 
   window.addEventListener('resize', onWindowResize, false);
 
-  var effectController = {
+  const effectController = {
     mouseSize: 20.0,
     viscosity: 0.03,
   };
 
-  var valuesChanger = function() {
+  const valuesChanger = function() {
     heightmapVariable.material.uniforms.mouseSize.value =
       effectController.mouseSize;
     heightmapVariable.material.uniforms.viscosityConstant.value =
@@ -95,9 +91,9 @@ function init() {
 }
 
 function initWater() {
-  var materialColor = 0x0040c0;
+  const materialColor = 0x0040c0;
 
-  var geometry = new THREE.PlaneBufferGeometry(
+  const geometry = new THREE.PlaneBufferGeometry(
     BOUNDS,
     BOUNDS,
     WIDTH - 1,
@@ -105,7 +101,7 @@ function initWater() {
   );
 
   // material: make a ShaderMaterial clone of MeshPhongMaterial, with customized vertex shader
-  var material = new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([
       THREE.ShaderLib['phong'].uniforms,
       {
@@ -138,7 +134,7 @@ function initWater() {
   scene.add(waterMesh);
 
   // Mesh just for mouse raycasting
-  var geometryRay = new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, 1, 1);
+  const geometryRay = new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, 1, 1);
   meshRay = new THREE.Mesh(
     geometryRay,
     new THREE.MeshBasicMaterial({ color: 0xffffff, visible: false })
@@ -152,7 +148,7 @@ function initWater() {
 
   gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, renderer);
 
-  var heightmap0 = gpuCompute.createTexture();
+  const heightmap0 = gpuCompute.createTexture();
 
   fillTexture(heightmap0);
 
@@ -171,20 +167,20 @@ function initWater() {
   heightmapVariable.material.uniforms.viscosityConstant = { value: 0.03 };
   heightmapVariable.material.defines.BOUNDS = BOUNDS.toFixed(1);
 
-  var error = gpuCompute.init();
+  const error = gpuCompute.init();
   if (error !== null) {
     console.error(error);
   }
 }
 
 function fillTexture(texture) {
-  var waterMaxHeight = 10;
+  const waterMaxHeight = 10;
 
   function noise(x, y, z) {
-    var multR = waterMaxHeight;
-    var mult = 0.025;
-    var r = 0;
-    for (var i = 0; i < 15; i++) {
+    let multR = waterMaxHeight;
+    let mult = 0.025;
+    let r = 0;
+    for (let i = 0; i < 15; i++) {
       r += multR * Math.random();
       multR *= 0.53 + 0.025 * i;
       mult *= 1.25;
@@ -192,13 +188,13 @@ function fillTexture(texture) {
     return r;
   }
 
-  var pixels = texture.image.data;
+  const pixels = texture.image.data;
 
-  var p = 0;
-  for (var j = 0; j < WIDTH; j++) {
-    for (var i = 0; i < WIDTH; i++) {
-      var x = i * 128 / WIDTH;
-      var y = j * 128 / WIDTH;
+  let p = 0;
+  for (let j = 0; j < WIDTH; j++) {
+    for (let i = 0; i < WIDTH; i++) {
+      const x = i * 128 / WIDTH;
+      const y = j * 128 / WIDTH;
 
       pixels[p + 0] = noise(x, y, 123.4);
       pixels[p + 1] = 0;
@@ -211,9 +207,6 @@ function fillTexture(texture) {
 }
 
 function onWindowResize() {
-  windowHalfX = window.innerWidth / 2;
-  windowHalfY = window.innerHeight / 2;
-
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
@@ -256,14 +249,14 @@ function animate() {
 
 function render() {
   // Set uniforms: mouse interaction
-  var uniforms = heightmapVariable.material.uniforms;
+  const uniforms = heightmapVariable.material.uniforms;
   if (mouseMoved) {
     raycaster.setFromCamera(mouseCoords, camera);
 
-    var intersects = raycaster.intersectObject(meshRay);
+    const intersects = raycaster.intersectObject(meshRay);
 
     if (intersects.length > 0) {
-      var point = intersects[0].point;
+      const point = intersects[0].point;
       uniforms.mousePos.value.set(point.x, point.z);
     } else {
       uniforms.mousePos.value.set(10000, 10000);
