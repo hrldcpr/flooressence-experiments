@@ -117,8 +117,9 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
   };
 
   function addResolutionDefine(materialShader) {
-    materialShader.defines.resolution =
-      'vec2( ' + sizeX.toFixed(1) + ', ' + sizeY.toFixed(1) + ' )';
+    materialShader.defines.resolution = `vec2(${sizeX.toFixed(
+      1
+    )}, ${sizeY.toFixed(1)})`;
   }
   this.addResolutionDefine = addResolutionDefine;
 
