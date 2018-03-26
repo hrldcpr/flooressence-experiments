@@ -62,6 +62,8 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
 
     for (const variable of this.variables) {
       // Creates rendertargets and initialize them with input texture
+      // need two targets because you can't both read and write the same texture
+      // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
       variable.renderTargets[0] = this.createRenderTarget();
       variable.renderTargets[1] = this.createRenderTarget();
       this.renderTexture(
