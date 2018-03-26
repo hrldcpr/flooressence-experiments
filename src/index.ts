@@ -256,10 +256,8 @@ function render() {
   }
 
   // Do the gpu computation
-  gpuCompute.compute();
-
   // Get compute output in custom uniform
-  waterUniforms.heightmap.value = gpuCompute.getCurrentRenderTarget().texture;
+  waterUniforms.heightmap.value = gpuCompute.compute();
 
   // Render
   renderer.render(scene, camera);

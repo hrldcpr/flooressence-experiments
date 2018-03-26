@@ -24,19 +24,9 @@ export default function GPUComputationRenderer({
     renderer.render(scene, camera, pong);
 
     [ping, pong] = [pong, ping];
-  };
 
-  this.getCurrentRenderTarget = function() {
-    return ping;
+    return ping.texture;
   };
-
-  const addResolutionDefine = function(materialShader) {
-    materialShader.defines.resolution = `vec2(${sizeX.toFixed(
-      1
-    )}, ${sizeY.toFixed(1)})`;
-  };
-
-  // The following functions can be used to compute things manually
 
   const createShaderMaterial = function(computeFragmentShader, uniforms?) {
     uniforms = uniforms || {};
@@ -47,7 +37,9 @@ export default function GPUComputationRenderer({
       fragmentShader: computeFragmentShader,
     });
 
-    addResolutionDefine(material);
+    material.defines.resolution = `vec2(${sizeX.toFixed(1)}, ${sizeY.toFixed(
+      1
+    )})`;
 
     return material;
   };
