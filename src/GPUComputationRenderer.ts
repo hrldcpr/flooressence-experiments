@@ -36,8 +36,8 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
 
     const variable = {
       name: variableName,
-      initialValueTexture: initialValueTexture,
-      material: material,
+      initialValueTexture,
+      material,
       dependencies: null,
       renderTargets: [],
     };
@@ -129,7 +129,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     uniforms = uniforms || {};
 
     const material = new THREE.ShaderMaterial({
-      uniforms: uniforms,
+      uniforms,
       vertexShader: passThroughVertexShader,
       fragmentShader: computeFragmentShader,
     });
