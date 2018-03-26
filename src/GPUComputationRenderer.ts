@@ -8,34 +8,15 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
 
   this.currentTextureIndex = 0;
 
-  const scene = new THREE.Scene();
-
-  const camera = new THREE.Camera();
-
-  const passThruUniforms = {
-    texture: { value: null },
-  };
-
-  const passThruShader = createShaderMaterial(
-    passThroughFragmentShader,
-    passThruUniforms
-  );
-
-  const mesh = new THREE.Mesh(
-    new THREE.PlaneBufferGeometry(2, 2),
-    passThruShader
-  );
-  scene.add(mesh);
-
   this.addVariable = function(
-    variableName,
+    name,
     computeFragmentShader,
     initialValueTexture
   ) {
     const material = this.createShaderMaterial(computeFragmentShader);
 
     const variable = {
-      name: variableName,
+      name,
       initialValueTexture,
       material,
       dependencies: null,
@@ -127,7 +108,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
 
   // The following functions can be used to compute things manually
 
-  function createShaderMaterial(computeFragmentShader, uniforms) {
+  this.createShaderMaterial = function(computeFragmentShader, uniforms) {
     uniforms = uniforms || {};
 
     const material = new THREE.ShaderMaterial({
@@ -139,8 +120,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     addResolutionDefine(material);
 
     return material;
-  }
-  this.createShaderMaterial = createShaderMaterial;
+  };
 
   this.createRenderTarget = function() {
     return new THREE.WebGLRenderTarget(sizeX, sizeY, {
@@ -179,4 +159,22 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     mesh.material = material;
     renderer.render(scene, camera, output);
   };
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.Camera();
+
+  const passThruUniforms = {
+    texture: { value: null },
+  };
+
+  const passThruShader = this.createShaderMaterial(
+    passThroughFragmentShader,
+    passThruUniforms
+  );
+
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(2, 2),
+    passThruShader
+  );
+  scene.add(mesh);
 }
