@@ -3,35 +3,12 @@ import * as THREE from 'three';
 import passThroughVertexShader from './pass_through_vertex_shader';
 import passThroughFragmentShader from './pass_through_fragment_shader';
 
-export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
-  this.variables = [];
-
-  this.currentTextureIndex = 0;
-
-  this.addVariable = function(
-    name,
-    computeFragmentShader,
-    initialValueTexture
-  ) {
-    const material = this.createShaderMaterial(computeFragmentShader);
-
-    const variable = {
-      name,
-      initialValueTexture,
-      material,
-      dependencies: null,
-      renderTargets: [],
-    };
-
-    this.variables.push(variable);
-
-    return variable;
-  };
-
-  this.setVariableDependencies = function(variable, dependencies) {
-    variable.dependencies = dependencies;
-  };
-
+export default function GPUComputationRenderer({
+  sizeX,
+  sizeY,
+  renderer,
+  computeFragmentShader,
+}) {
   this.init = function() {
     if (!renderer.extensions.get('OES_texture_float')) {
       return 'No OES_texture_float support for float textures.';
@@ -41,70 +18,42 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
       return 'No support for vertex shader textures.';
     }
 
-    for (const variable of this.variables) {
-      // Creates rendertargets and initialize them with input texture
-      // need two targets because you can't both read and write the same texture
-      // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
-      variable.renderTargets[0] = this.createRenderTarget();
-      variable.renderTargets[1] = this.createRenderTarget();
-      this.renderTexture(
-        variable.initialValueTexture,
-        variable.renderTargets[0]
-      );
-      this.renderTexture(
-        variable.initialValueTexture,
-        variable.renderTargets[1]
-      );
+    // Creates rendertargets and initialize them with input texture
+    // need two targets because you can't both read and write the same texture
+    // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
+    this.renderTargets[0] = this.createRenderTarget();
+    this.renderTargets[1] = this.createRenderTarget();
+    this.renderTexture(this.initialValueTexture, this.renderTargets[0]);
+    this.renderTexture(this.initialValueTexture, this.renderTargets[1]);
 
-      // Adds dependencies uniforms to the ShaderMaterial
-      const material = variable.material;
-      for (const depVar of variable.dependencies || []) {
-        material.uniforms[depVar.name] = { value: null };
-        material.fragmentShader =
-          `uniform sampler2D ${depVar.name};\n` + material.fragmentShader;
-      }
-    }
+    // Adds dependencies uniforms to the ShaderMaterial
+    this.material.uniforms.heightmap = { value: null };
 
     this.currentTextureIndex = 0;
-
-    return null;
   };
 
   this.compute = function() {
     const currentTextureIndex = this.currentTextureIndex;
     const nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
 
-    for (const variable of this.variables) {
-      // Sets texture dependencies uniforms
-      for (const depVar of variable.dependencies || []) {
-        variable.material.uniforms[depVar.name].value =
-          depVar.renderTargets[currentTextureIndex].texture;
-      }
+    this.material.uniforms.heightmap.value = this.renderTargets[
+      currentTextureIndex
+    ].texture;
 
-      // Performs the computation for this variable
-      this.doRenderTarget(
-        variable.material,
-        variable.renderTargets[nextTextureIndex]
-      );
-    }
+    this.doRenderTarget(this.material, this.renderTargets[nextTextureIndex]);
 
     this.currentTextureIndex = nextTextureIndex;
   };
 
-  this.getCurrentRenderTarget = function(variable) {
-    return variable.renderTargets[this.currentTextureIndex];
+  this.getCurrentRenderTarget = function() {
+    return this.renderTargets[this.currentTextureIndex];
   };
 
-  this.getAlternateRenderTarget = function(variable) {
-    return variable.renderTargets[this.currentTextureIndex === 0 ? 1 : 0];
-  };
-
-  function addResolutionDefine(materialShader) {
+  this.addResolutionDefine = function(materialShader) {
     materialShader.defines.resolution = `vec2(${sizeX.toFixed(
       1
     )}, ${sizeY.toFixed(1)})`;
-  }
-  this.addResolutionDefine = addResolutionDefine;
+  };
 
   // The following functions can be used to compute things manually
 
@@ -117,7 +66,7 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
       fragmentShader: computeFragmentShader,
     });
 
-    addResolutionDefine(material);
+    this.addResolutionDefine(material);
 
     return material;
   };
@@ -132,17 +81,17 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     });
   };
 
-  this.createTexture = function() {
-    const texture = new THREE.DataTexture(
+  this.createInitialValueTexture = function() {
+    this.initialValueTexture = new THREE.DataTexture(
       new Float32Array(sizeX * sizeY * 4),
       sizeX,
       sizeY,
       THREE.RGBAFormat,
       THREE.FloatType
     );
-    texture.needsUpdate = true;
+    this.initialValueTexture.needsUpdate = true;
 
-    return texture;
+    return this.initialValueTexture;
   };
 
   this.renderTexture = function(input, output) {
@@ -159,6 +108,12 @@ export default function GPUComputationRenderer(sizeX, sizeY, renderer) {
     mesh.material = material;
     renderer.render(scene, camera, output);
   };
+
+  this.renderTargets = [];
+
+  this.currentTextureIndex = 0;
+
+  this.material = this.createShaderMaterial(computeFragmentShader);
 
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();

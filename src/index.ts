@@ -20,7 +20,6 @@ const raycaster = new THREE.Raycaster();
 let waterMesh;
 let meshRay;
 let gpuCompute;
-let heightmapVariable;
 let waterUniforms;
 
 init();
@@ -77,8 +76,8 @@ function init() {
 
   initWater();
 
-  heightmapVariable.material.uniforms.mouseSize.value = 20.0;
-  heightmapVariable.material.uniforms.viscosityConstant.value = 0.03;
+  gpuCompute.material.uniforms.mouseSize.value = 20.0;
+  gpuCompute.material.uniforms.viscosityConstant.value = 0.03;
 }
 
 function initWater() {
@@ -137,29 +136,25 @@ function initWater() {
 
   // Creates the gpu computation class and sets it up
 
-  gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, renderer);
+  gpuCompute = new GPUComputationRenderer({
+    sizeX: WIDTH,
+    sizeY: WIDTH,
+    renderer,
+    computeFragmentShader: heightmapFragmentShader,
+  });
 
-  const heightmap0 = gpuCompute.createTexture();
-
+  const heightmap0 = gpuCompute.createInitialValueTexture();
   fillTexture(heightmap0);
 
-  heightmapVariable = gpuCompute.addVariable(
-    'heightmap',
-    heightmapFragmentShader,
-    heightmap0
-  );
-
-  gpuCompute.setVariableDependencies(heightmapVariable, [heightmapVariable]);
-
-  heightmapVariable.material.uniforms.mousePos = {
+  gpuCompute.material.uniforms.mousePos = {
     value: new THREE.Vector2(10000, 10000),
   };
-  heightmapVariable.material.uniforms.mouseSize = { value: 20.0 };
-  heightmapVariable.material.uniforms.viscosityConstant = { value: 0.03 };
-  heightmapVariable.material.defines.BOUNDS = BOUNDS.toFixed(1);
+  gpuCompute.material.uniforms.mouseSize = { value: 20.0 };
+  gpuCompute.material.uniforms.viscosityConstant = { value: 0.03 };
+  gpuCompute.material.defines.BOUNDS = BOUNDS.toFixed(1);
 
   const error = gpuCompute.init();
-  if (error !== null) {
+  if (error) {
     console.error(error);
   }
 }
@@ -240,7 +235,7 @@ function animate() {
 
 function render() {
   // Set uniforms: mouse interaction
-  const uniforms = heightmapVariable.material.uniforms;
+  const uniforms = gpuCompute.material.uniforms;
   if (mouseMoved) {
     raycaster.setFromCamera(mouseCoords, camera);
 
@@ -262,9 +257,7 @@ function render() {
   gpuCompute.compute();
 
   // Get compute output in custom uniform
-  waterUniforms.heightmap.value = gpuCompute.getCurrentRenderTarget(
-    heightmapVariable
-  ).texture;
+  waterUniforms.heightmap.value = gpuCompute.getCurrentRenderTarget().texture;
 
   // Render
   renderer.render(scene, camera);

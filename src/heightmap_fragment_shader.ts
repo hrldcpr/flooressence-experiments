@@ -5,6 +5,7 @@ export default `
 uniform vec2 mousePos;
 uniform float mouseSize;
 uniform float viscosityConstant;
+uniform sampler2D heightmap;
 
 #define deltaTime ( 1.0 / 60.0 )
 #define GRAVITY_CONSTANT ( resolution.x * deltaTime * 3.0 )
