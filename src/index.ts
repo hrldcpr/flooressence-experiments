@@ -136,15 +136,23 @@ function initWater() {
 
   // Creates the gpu computation class and sets it up
 
+  const heightmap0 = new THREE.DataTexture(
+    new Float32Array(WIDTH * WIDTH * 4),
+    WIDTH,
+    WIDTH,
+    THREE.RGBAFormat,
+    THREE.FloatType
+  );
+  heightmap0.needsUpdate = true;
+  fillTexture(heightmap0);
+
   gpuCompute = new GPUComputationRenderer({
     sizeX: WIDTH,
     sizeY: WIDTH,
     renderer,
     computeFragmentShader: heightmapFragmentShader,
+    initialValueTexture: heightmap0,
   });
-
-  const heightmap0 = gpuCompute.createInitialValueTexture();
-  fillTexture(heightmap0);
 
   gpuCompute.material.uniforms.mousePos = {
     value: new THREE.Vector2(10000, 10000),
@@ -152,11 +160,6 @@ function initWater() {
   gpuCompute.material.uniforms.mouseSize = { value: 20.0 };
   gpuCompute.material.uniforms.viscosityConstant = { value: 0.03 };
   gpuCompute.material.defines.BOUNDS = BOUNDS.toFixed(1);
-
-  const error = gpuCompute.init();
-  if (error) {
-    console.error(error);
-  }
 }
 
 function fillTexture(texture) {

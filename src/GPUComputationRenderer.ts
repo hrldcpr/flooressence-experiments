@@ -8,30 +8,8 @@ export default function GPUComputationRenderer({
   sizeY,
   renderer,
   computeFragmentShader,
+  initialValueTexture,
 }) {
-  this.init = function() {
-    if (!renderer.extensions.get('OES_texture_float')) {
-      return 'No OES_texture_float support for float textures.';
-    }
-
-    if (renderer.capabilities.maxVertexTextures === 0) {
-      return 'No support for vertex shader textures.';
-    }
-
-    // Creates rendertargets and initialize them with input texture
-    // need two targets because you can't both read and write the same texture
-    // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
-    this.renderTargets[0] = this.createRenderTarget();
-    this.renderTargets[1] = this.createRenderTarget();
-    this.renderTexture(this.initialValueTexture, this.renderTargets[0]);
-    this.renderTexture(this.initialValueTexture, this.renderTargets[1]);
-
-    // Adds dependencies uniforms to the ShaderMaterial
-    this.material.uniforms.heightmap = { value: null };
-
-    this.currentTextureIndex = 0;
-  };
-
   this.compute = function() {
     const currentTextureIndex = this.currentTextureIndex;
     const nextTextureIndex = this.currentTextureIndex === 0 ? 1 : 0;
@@ -81,19 +59,6 @@ export default function GPUComputationRenderer({
     });
   };
 
-  this.createInitialValueTexture = function() {
-    this.initialValueTexture = new THREE.DataTexture(
-      new Float32Array(sizeX * sizeY * 4),
-      sizeX,
-      sizeY,
-      THREE.RGBAFormat,
-      THREE.FloatType
-    );
-    this.initialValueTexture.needsUpdate = true;
-
-    return this.initialValueTexture;
-  };
-
   this.renderTexture = function(input, output) {
     // Takes a texture, and render out in rendertarget
     // input = Texture
@@ -110,10 +75,9 @@ export default function GPUComputationRenderer({
   };
 
   this.renderTargets = [];
-
   this.currentTextureIndex = 0;
-
   this.material = this.createShaderMaterial(computeFragmentShader);
+  this.material.uniforms.heightmap = { value: null };
 
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
@@ -132,4 +96,20 @@ export default function GPUComputationRenderer({
     passThruShader
   );
   scene.add(mesh);
+
+  if (!renderer.extensions.get('OES_texture_float')) {
+    console.log('No OES_texture_float support for float textures.');
+  }
+
+  if (renderer.capabilities.maxVertexTextures === 0) {
+    console.log('No support for vertex shader textures.');
+  }
+
+  // Creates rendertargets and initialize them with input texture
+  // need two targets because you can't both read and write the same texture
+  // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
+  this.renderTargets[0] = this.createRenderTarget();
+  this.renderTargets[1] = this.createRenderTarget();
+  this.renderTexture(initialValueTexture, this.renderTargets[0]);
+  this.renderTexture(initialValueTexture, this.renderTargets[1]);
 }
