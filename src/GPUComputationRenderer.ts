@@ -10,13 +10,21 @@ export default function GPUComputationRenderer({
   computeFragmentShader,
   initialValueTexture,
 }) {
+  if (!renderer.extensions.get('OES_texture_float')) {
+    console.log('No OES_texture_float support for float textures.');
+  }
+
+  if (renderer.capabilities.maxVertexTextures === 0) {
+    console.log('No support for vertex shader textures.');
+  }
+
   this.compute = function() {
     const nextTextureIndex = currentTextureIndex === 0 ? 1 : 0;
 
     this.material.uniforms.heightmap.value =
       renderTargets[currentTextureIndex].texture;
-
-    doRenderTarget(this.material, renderTargets[nextTextureIndex]);
+    mesh.material = this.material;
+    renderer.render(scene, camera, renderTargets[nextTextureIndex]);
 
     currentTextureIndex = nextTextureIndex;
   };
@@ -57,21 +65,6 @@ export default function GPUComputationRenderer({
     });
   };
 
-  const renderTexture = function(input, output) {
-    // Takes a texture, and render out in rendertarget
-    // input = Texture
-    // output = RenderTarget
-
-    passThruUniforms.texture.value = input;
-
-    doRenderTarget(passThruShader, output);
-  };
-
-  const doRenderTarget = function(material, output) {
-    mesh.material = material;
-    renderer.render(scene, camera, output);
-  };
-
   const renderTargets = [];
   let currentTextureIndex = 0;
   this.material = createShaderMaterial(computeFragmentShader);
@@ -80,34 +73,22 @@ export default function GPUComputationRenderer({
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
 
-  const passThruUniforms = {
-    texture: { value: null },
-  };
-
-  const passThruShader = createShaderMaterial(
-    passThroughFragmentShader,
-    passThruUniforms
-  );
-
   const mesh = new THREE.Mesh(
     new THREE.PlaneBufferGeometry(2, 2),
-    passThruShader
+    createShaderMaterial(passThroughFragmentShader, {
+      texture: { value: initialValueTexture },
+    })
   );
   scene.add(mesh);
 
-  if (!renderer.extensions.get('OES_texture_float')) {
-    console.log('No OES_texture_float support for float textures.');
-  }
-
-  if (renderer.capabilities.maxVertexTextures === 0) {
-    console.log('No support for vertex shader textures.');
-  }
-
-  // Creates rendertargets and initialize them with input texture
   // need two targets because you can't both read and write the same texture
   // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
   renderTargets[0] = createRenderTarget();
   renderTargets[1] = createRenderTarget();
-  renderTexture(initialValueTexture, renderTargets[0]);
-  renderTexture(initialValueTexture, renderTargets[1]);
+
+  // render initial values into textures, using pass-through shader
+  renderer.render(scene, camera, renderTargets[0]);
+  renderer.render(scene, camera, renderTargets[1]);
+
+  mesh.material = this.material;
 }
