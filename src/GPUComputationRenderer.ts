@@ -19,18 +19,15 @@ export default function GPUComputationRenderer({
   }
 
   this.compute = function() {
-    const nextTextureIndex = currentTextureIndex === 0 ? 1 : 0;
-
-    this.material.uniforms.heightmap.value =
-      renderTargets[currentTextureIndex].texture;
+    this.material.uniforms.heightmap.value = ping.texture;
     mesh.material = this.material;
-    renderer.render(scene, camera, renderTargets[nextTextureIndex]);
+    renderer.render(scene, camera, pong);
 
-    currentTextureIndex = nextTextureIndex;
+    [ping, pong] = [pong, ping];
   };
 
   this.getCurrentRenderTarget = function() {
-    return renderTargets[currentTextureIndex];
+    return ping;
   };
 
   const addResolutionDefine = function(materialShader) {
@@ -65,8 +62,6 @@ export default function GPUComputationRenderer({
     });
   };
 
-  const renderTargets = [];
-  let currentTextureIndex = 0;
   this.material = createShaderMaterial(computeFragmentShader);
   this.material.uniforms.heightmap = { value: null };
 
@@ -83,12 +78,11 @@ export default function GPUComputationRenderer({
 
   // need two targets because you can't both read and write the same texture
   // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
-  renderTargets[0] = createRenderTarget();
-  renderTargets[1] = createRenderTarget();
+  let ping = createRenderTarget();
+  let pong = createRenderTarget();
 
   // render initial values into textures, using pass-through shader
-  renderer.render(scene, camera, renderTargets[0]);
-  renderer.render(scene, camera, renderTargets[1]);
+  renderer.render(scene, camera, ping);
 
   mesh.material = this.material;
 }

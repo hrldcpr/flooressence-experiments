@@ -6,7 +6,6 @@ import waterVertexShader from './water_vertex_shader';
 
 // Texture width for simulation
 const WIDTH = 128;
-const NUM_TEXELS = WIDTH * WIDTH;
 
 // Water size in system units
 const BOUNDS = 512;
