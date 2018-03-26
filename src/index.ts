@@ -75,21 +75,10 @@ function init() {
 
   window.addEventListener('resize', onWindowResize, false);
 
-  const effectController = {
-    mouseSize: 20.0,
-    viscosity: 0.03,
-  };
-
-  const valuesChanger = function() {
-    heightmapVariable.material.uniforms.mouseSize.value =
-      effectController.mouseSize;
-    heightmapVariable.material.uniforms.viscosityConstant.value =
-      effectController.viscosity;
-  };
-
   initWater();
 
-  valuesChanger();
+  heightmapVariable.material.uniforms.mouseSize.value = 20.0;
+  heightmapVariable.material.uniforms.viscosityConstant.value = 0.03;
 }
 
 function initWater() {
