@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 
-import GPUComputationRenderer from './GPUComputationRenderer';
+import passThroughVertexShader from './pass_through_vertex_shader';
+import passThroughFragmentShader from './pass_through_fragment_shader';
 import heightmapFragmentShader from './heightmap_fragment_shader';
 import waterVertexShader from './water_vertex_shader';
 
 // Texture width for simulation
 const WIDTH = 128;
+const HEIGHT = 128;
 
 // Water size in system units
 const BOUNDS = 512;
@@ -29,9 +31,9 @@ function noise(x, y, z) {
 
 function fillTexture() {
   const texture = new THREE.DataTexture(
-    new Float32Array(WIDTH * WIDTH * 4),
+    new Float32Array(WIDTH * HEIGHT * 4),
     WIDTH,
-    WIDTH,
+    HEIGHT,
     THREE.RGBAFormat,
     THREE.FloatType
   );
@@ -39,10 +41,10 @@ function fillTexture() {
   const pixels = texture.image.data;
 
   let p = 0;
-  for (let j = 0; j < WIDTH; j++) {
+  for (let j = 0; j < HEIGHT; j++) {
     for (let i = 0; i < WIDTH; i++) {
       const x = i * 128 / WIDTH;
-      const y = j * 128 / WIDTH;
+      const y = j * 128 / HEIGHT;
 
       pixels[p + 0] = noise(x, y, 123.4);
       pixels[p + 1] = 0;
@@ -73,16 +75,16 @@ function animate() {
     const intersects = raycaster.intersectObject(meshRay);
     if (intersects.length > 0) {
       const point = intersects[0].point;
-      gpuCompute.material.uniforms.mousePos.value.set(point.x, point.z);
+      computeMaterial.uniforms.mousePos.value.set(point.x, point.z);
     } else {
-      gpuCompute.material.uniforms.mousePos.value.set(10000, 10000);
+      computeMaterial.uniforms.mousePos.value.set(10000, 10000);
     }
     mouseMoved = false;
   } else {
-    gpuCompute.material.uniforms.mousePos.value.set(10000, 10000);
+    computeMaterial.uniforms.mousePos.value.set(10000, 10000);
   }
 
-  material.uniforms.heightmap.value = gpuCompute.compute();
+  waterMaterial.uniforms.heightmap.value = compute();
   renderer.render(scene, camera);
 }
 
@@ -109,7 +111,7 @@ sun2.position.set(-100, 350, -200);
 scene.add(sun2);
 
 // material: make a ShaderMaterial clone of MeshPhongMaterial, with customized vertex shader
-const material = new THREE.ShaderMaterial({
+const waterMaterial = new THREE.ShaderMaterial({
   uniforms: THREE.UniformsUtils.merge([
     THREE.ShaderLib['phong'].uniforms,
     {
@@ -119,17 +121,17 @@ const material = new THREE.ShaderMaterial({
   vertexShader: waterVertexShader,
   fragmentShader: THREE.ShaderChunk['meshphong_frag'],
 });
-material.lights = true;
-material.uniforms.diffuse.value = new THREE.Color(0x0040c0);
-material.uniforms.specular.value = new THREE.Color(0x111111);
-material.uniforms.shininess.value = Math.max(50, 1e-4);
-material.uniforms.opacity.value = material.opacity;
-material.defines.WIDTH = WIDTH.toFixed(1);
-material.defines.BOUNDS = BOUNDS.toFixed(1);
+waterMaterial.lights = true;
+waterMaterial.uniforms.diffuse.value = new THREE.Color(0x0040c0);
+waterMaterial.uniforms.specular.value = new THREE.Color(0x111111);
+waterMaterial.uniforms.shininess.value = Math.max(50, 1e-4);
+waterMaterial.uniforms.opacity.value = waterMaterial.opacity;
+waterMaterial.defines.WIDTH = WIDTH.toFixed(1);
+waterMaterial.defines.BOUNDS = BOUNDS.toFixed(1);
 
 const waterMesh = new THREE.Mesh(
-  new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, WIDTH - 1, WIDTH - 1),
-  material
+  new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, WIDTH - 1, HEIGHT - 1),
+  waterMaterial
 );
 waterMesh.rotation.x = -Math.PI / 2;
 waterMesh.matrixAutoUpdate = false;
@@ -151,19 +153,80 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const gpuCompute = new GPUComputationRenderer({
-  sizeX: WIDTH,
-  sizeY: WIDTH,
-  renderer,
-  computeFragmentShader: heightmapFragmentShader,
-  initialValueTexture: fillTexture(),
-});
-gpuCompute.material.uniforms.mousePos = {
+if (!renderer.extensions.get('OES_texture_float')) {
+  console.log('No OES_texture_float support for float textures.');
+}
+
+if (renderer.capabilities.maxVertexTextures === 0) {
+  console.log('No support for vertex shader textures.');
+}
+
+const compute = function() {
+  computeMaterial.uniforms.heightmap.value = ping.texture;
+  mesh.material = computeMaterial;
+  renderer.render(computeScene, computeCamera, pong);
+
+  [ping, pong] = [pong, ping];
+
+  return ping.texture;
+};
+
+const createShaderMaterial = function(computeFragmentShader, uniforms?) {
+  uniforms = uniforms || {};
+
+  const material = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: passThroughVertexShader,
+    fragmentShader: computeFragmentShader,
+  });
+
+  material.defines.resolution = `vec2(${WIDTH.toFixed(1)}, ${HEIGHT.toFixed(
+    1
+  )})`;
+
+  return material;
+};
+
+const createRenderTarget = function() {
+  return new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
+    stencilBuffer: false,
+  });
+};
+
+const computeMaterial = createShaderMaterial(heightmapFragmentShader);
+computeMaterial.uniforms.heightmap = { value: null };
+
+const computeScene = new THREE.Scene();
+const computeCamera = new THREE.Camera();
+
+const mesh = new THREE.Mesh(
+  new THREE.PlaneBufferGeometry(2, 2),
+  createShaderMaterial(passThroughFragmentShader, {
+    texture: { value: fillTexture() },
+  })
+);
+computeScene.add(mesh);
+
+// need two targets because you can't both read and write the same texture
+// see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
+let ping = createRenderTarget();
+let pong = createRenderTarget();
+
+// render initial values into textures, using pass-through shader
+renderer.render(computeScene, computeCamera, ping);
+
+mesh.material = computeMaterial;
+
+computeMaterial.uniforms.mousePos = {
   value: new THREE.Vector2(10000, 10000),
 };
-gpuCompute.material.uniforms.mouseSize = { value: 20.0 };
-gpuCompute.material.uniforms.viscosityConstant = { value: 0.03 };
-gpuCompute.material.defines.BOUNDS = BOUNDS.toFixed(1);
+computeMaterial.uniforms.mouseSize = { value: 20.0 };
+computeMaterial.uniforms.viscosityConstant = { value: 0.03 };
+computeMaterial.defines.BOUNDS = BOUNDS.toFixed(1);
 
 document.addEventListener('mousemove', event =>
   setMouseCoords(event.clientX, event.clientY)
