@@ -4,7 +4,7 @@ import passThroughVertexShader from './pass_through_vertex_shader';
 import heightmapFragmentShader from './heightmap_fragment_shader';
 import waterVertexShader from './water_vertex_shader';
 
-// Texture width for simulation
+// Texture size for simulation
 const WIDTH = 128;
 const HEIGHT = 128;
 
@@ -24,6 +24,8 @@ if (renderer.capabilities.maxVertexTextures === 0) {
   console.log('No support for vertex shader textures.');
 }
 
+const computeCamera = new THREE.Camera();
+const computeScene = new THREE.Scene();
 const computeMaterial = new THREE.ShaderMaterial({
   defines: {
     resolution: `vec2(${WIDTH.toFixed(1)}, ${HEIGHT.toFixed(1)})`,
@@ -32,31 +34,15 @@ const computeMaterial = new THREE.ShaderMaterial({
   vertexShader: passThroughVertexShader,
   fragmentShader: heightmapFragmentShader,
 });
-
-const computeScene = new THREE.Scene();
-const computeCamera = new THREE.Camera();
-
-computeScene.add(
-  new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), computeMaterial)
-);
-
-// need two targets because you can't both read and write the same texture
-// see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
-let ping = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
-  minFilter: THREE.NearestFilter,
-  magFilter: THREE.NearestFilter,
-  format: THREE.RGBAFormat,
-  type: THREE.FloatType,
-  stencilBuffer: false,
-});
-let pong = ping.clone();
-
 computeMaterial.uniforms.mousePos = {
   value: new THREE.Vector2(10000, 10000),
 };
 computeMaterial.uniforms.mouseSize = { value: 20.0 };
 computeMaterial.uniforms.viscosityConstant = { value: 0.03 };
 computeMaterial.defines.BOUNDS = BOUNDS.toFixed(1);
+computeScene.add(
+  new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), computeMaterial)
+);
 
 const camera = new THREE.OrthographicCamera(
   -BOUNDS / 2,
@@ -107,25 +93,11 @@ mesh.matrixAutoUpdate = false;
 mesh.updateMatrix();
 scene.add(mesh);
 
-// Mesh just for mouse raycasting
-const meshRay = new THREE.Mesh(
-  new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, 1, 1),
-  new THREE.MeshBasicMaterial({ color: 0xffffff, visible: false })
-);
-meshRay.rotation.x = -Math.PI / 2;
-meshRay.matrixAutoUpdate = false;
-meshRay.updateMatrix();
-scene.add(meshRay);
-
-let mouseMoved = false;
-const mouseCoords = new THREE.Vector2();
-
 function setMouseCoords(x, y) {
-  mouseCoords.set(
-    x / renderer.domElement.clientWidth * 2 - 1,
-    -(y / renderer.domElement.clientHeight) * 2 + 1
+  computeMaterial.uniforms.mousePos.value.set(
+    (0.5 - x / renderer.domElement.clientWidth) * BOUNDS,
+    (0.5 - y / renderer.domElement.clientHeight) * BOUNDS
   );
-  mouseMoved = true;
 }
 
 document.addEventListener('mousemove', event =>
@@ -148,31 +120,26 @@ window.addEventListener('resize', () =>
   renderer.setSize(window.innerWidth, window.innerHeight)
 );
 
+// need two targets because you can't both read and write the same texture
+// see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
+let ping = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
+  minFilter: THREE.NearestFilter,
+  magFilter: THREE.NearestFilter,
+  format: THREE.RGBAFormat,
+  type: THREE.FloatType,
+  stencilBuffer: false,
+});
+let pong = ping.clone();
+
 function animate() {
-  requestAnimationFrame(animate);
-
-  if (mouseMoved) {
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouseCoords, camera);
-    const intersects = raycaster.intersectObject(meshRay);
-
-    if (intersects.length > 0) {
-      const point = intersects[0].point;
-      computeMaterial.uniforms.mousePos.value.set(point.x, point.z);
-    } else {
-      computeMaterial.uniforms.mousePos.value.set(10000, 10000);
-    }
-    mouseMoved = false;
-  } else {
-    computeMaterial.uniforms.mousePos.value.set(10000, 10000);
-  }
-
   computeMaterial.uniforms.heightmap.value = ping.texture;
   renderer.render(computeScene, computeCamera, pong);
   [ping, pong] = [pong, ping];
 
   material.uniforms.heightmap.value = ping.texture;
   renderer.render(scene, camera);
+
+  requestAnimationFrame(animate);
 }
 
 animate();
