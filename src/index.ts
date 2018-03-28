@@ -140,6 +140,8 @@ function animate() {
   material.uniforms.heightmap.value = ping.texture;
   renderer.render(scene, camera);
 
+  computeMaterial.uniforms.mousePos.value.set(10000, 10000);
+
   requestAnimationFrame(animate);
 }
 
