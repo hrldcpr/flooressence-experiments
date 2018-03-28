@@ -62,7 +62,7 @@ scene.add(
 function setMouseCoords(x, y) {
   computeMaterial.uniforms.mousePos.value.set(
     (x / renderer.domElement.clientWidth - 0.5) * BOUNDS,
-    (y / renderer.domElement.clientHeight - 0.5) * BOUNDS
+    (-y / renderer.domElement.clientHeight + 0.5) * BOUNDS
   );
 }
 

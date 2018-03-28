@@ -39,7 +39,7 @@ void main() {
   heightmapValue.x += sump * viscosityConstant;
 
   // Mouse influence
-  float mousePhase = clamp( length( ( uv - vec2( 0.5 ) ) * BOUNDS - vec2( mousePos.x, - mousePos.y ) ) * PI / mouseSize, 0.0, PI );
+  float mousePhase = clamp( length( ( uv - vec2( 0.5 ) ) * BOUNDS - vec2( mousePos.x, mousePos.y ) ) * PI / mouseSize, 0.0, PI );
   heightmapValue.x += cos( mousePhase ) + 1.0;
 
   gl_FragColor = heightmapValue;
