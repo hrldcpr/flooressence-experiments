@@ -28,18 +28,18 @@ const computeCamera = new THREE.Camera();
 const computeScene = new THREE.Scene();
 const computeMaterial = new THREE.ShaderMaterial({
   defines: {
+    BOUNDS: BOUNDS.toFixed(1),
     resolution: `vec2(${WIDTH.toFixed(1)}, ${HEIGHT.toFixed(1)})`,
   },
-  uniforms: { heightmap: { value: null } },
+  uniforms: {
+    heightmap: { value: null },
+    mousePos: { value: new THREE.Vector2(10000, 10000) },
+    mouseSize: { value: 20.0 },
+    viscosityConstant: { value: 0.03 },
+  },
   vertexShader: passThroughVertexShader,
   fragmentShader: heightmapFragmentShader,
 });
-computeMaterial.uniforms.mousePos = {
-  value: new THREE.Vector2(10000, 10000),
-};
-computeMaterial.uniforms.mouseSize = { value: 20.0 };
-computeMaterial.uniforms.viscosityConstant = { value: 0.03 };
-computeMaterial.defines.BOUNDS = BOUNDS.toFixed(1);
 computeScene.add(
   new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), computeMaterial)
 );
@@ -68,29 +68,30 @@ scene.add(sun2);
 
 // make a ShaderMaterial clone of MeshPhongMaterial, with customized vertex shader
 const material = new THREE.ShaderMaterial({
+  lights: true,
+  defines: {
+    WIDTH: WIDTH.toFixed(1),
+    HEIGHT: HEIGHT.toFixed(1),
+    BOUNDS: BOUNDS.toFixed(1),
+  },
   uniforms: THREE.UniformsUtils.merge([
     THREE.ShaderLib['phong'].uniforms,
-    { heightmap: { value: null } },
+    {
+      heightmap: { value: null },
+      diffuse: { value: new THREE.Color(0x0040c0) },
+      specular: { value: new THREE.Color(0x111111) },
+      shininess: { value: Math.max(50, 1e-4) },
+    },
   ]),
   vertexShader: waterVertexShader,
   fragmentShader: THREE.ShaderChunk['meshphong_frag'],
 });
-material.lights = true;
-material.uniforms.diffuse.value = new THREE.Color(0x0040c0);
-material.uniforms.specular.value = new THREE.Color(0x111111);
-material.uniforms.shininess.value = Math.max(50, 1e-4);
-material.uniforms.opacity.value = material.opacity;
-material.defines.WIDTH = WIDTH.toFixed(1);
-material.defines.HEIGHT = HEIGHT.toFixed(1);
-material.defines.BOUNDS = BOUNDS.toFixed(1);
 
 const mesh = new THREE.Mesh(
   new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS, WIDTH - 1, HEIGHT - 1),
   material
 );
 mesh.rotation.x = -Math.PI / 2;
-mesh.matrixAutoUpdate = false;
-mesh.updateMatrix();
 scene.add(mesh);
 
 function setMouseCoords(x, y) {
