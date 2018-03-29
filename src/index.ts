@@ -66,18 +66,18 @@ function setMouseCoords(x, y) {
   );
 }
 
+alert('v3');
+
 document.addEventListener('mousemove', event =>
   setMouseCoords(event.clientX, event.clientY)
 );
 document.addEventListener('touchstart', event => {
   if (event.touches.length === 1) {
-    event.preventDefault();
     setMouseCoords(event.touches[0].pageX, event.touches[0].pageY);
   }
 });
 document.addEventListener('touchmove', event => {
   if (event.touches.length === 1) {
-    event.preventDefault();
     setMouseCoords(event.touches[0].pageX, event.touches[0].pageY);
   }
 });
