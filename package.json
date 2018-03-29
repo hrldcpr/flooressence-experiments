@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "license": "ISC",
   "scripts": {
+    "build": "parcel build --public-url=./ src/index.html",
+    "deploy": "gh-pages -d dist",
     "start": "parcel src/index.html"
   },
   "dependencies": {
@@ -11,6 +13,7 @@
     "three": "^0.91.0"
   },
   "devDependencies": {
+    "gh-pages": "^1.1.0",
     "parcel-bundler": "^1.6.2",
     "parcel-plugin-typescript": "^0.7.0",
     "prettier": "^1.11.1",
