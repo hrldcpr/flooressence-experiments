@@ -35,8 +35,9 @@ const computeMaterial = new THREE.ShaderMaterial({
   },
   uniforms: {
     heightmap: { value: null },
-    mousePos: { value: new THREE.Vector2(10000, 10000) },
-    mouseSize: { value: 20.0 },
+    mouse1: { value: new THREE.Vector2(10000, 10000) },
+    mouse2: { value: new THREE.Vector2(10000, 10000) },
+    mouseSize: { value: 20.0 / BOUNDS },
     viscosityConstant: { value: 0.03 },
   },
   vertexShader: passThroughVertexShader,
@@ -59,27 +60,17 @@ scene.add(
   new THREE.Mesh(new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS), material)
 );
 
-function setMouseCoords(x, y) {
-  computeMaterial.uniforms.mousePos.value.set(
-    (x / renderer.domElement.clientWidth - 0.5) * BOUNDS,
-    (-y / renderer.domElement.clientHeight + 0.5) * BOUNDS
+let mouseIndex = 0;
+document.addEventListener('click', event => {
+  const mouse =
+    mouseIndex === 0
+      ? computeMaterial.uniforms.mouse1
+      : computeMaterial.uniforms.mouse2;
+  mouse.value.set(
+    event.clientX / renderer.domElement.clientWidth,
+    1 - event.clientY / renderer.domElement.clientHeight
   );
-}
-
-document.addEventListener('mousemove', event =>
-  setMouseCoords(event.clientX, event.clientY)
-);
-document.addEventListener('touchstart', event => {
-  if (event.touches.length === 1) {
-    event.preventDefault();
-    setMouseCoords(event.touches[0].pageX, event.touches[0].pageY);
-  }
-});
-document.addEventListener('touchmove', event => {
-  if (event.touches.length === 1) {
-    event.preventDefault();
-    setMouseCoords(event.touches[0].pageX, event.touches[0].pageY);
-  }
+  mouseIndex = (mouseIndex + 1) % 2;
 });
 
 window.addEventListener('resize', () =>
@@ -89,8 +80,8 @@ window.addEventListener('resize', () =>
 // need two targets because you can't both read and write the same texture
 // see https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#Sampling_and_Rendering_to_the_Same_Texture
 let ping = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
-  minFilter: THREE.NearestFilter,
-  magFilter: THREE.NearestFilter,
+  // minFilter: THREE.NearestFilter,
+  // magFilter: THREE.NearestFilter,
   format: THREE.RGBAFormat,
   type: THREE.FloatType,
   stencilBuffer: false,
@@ -104,8 +95,6 @@ function animate() {
 
   material.uniforms.heightmap.value = ping.texture;
   renderer.render(scene, camera);
-
-  computeMaterial.uniforms.mousePos.value.set(10000, 10000);
 
   requestAnimationFrame(animate);
 }
