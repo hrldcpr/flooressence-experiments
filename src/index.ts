@@ -30,13 +30,12 @@ const computeCamera = new THREE.Camera();
 
 const computeMaterial = new THREE.ShaderMaterial({
   defines: {
-    BOUNDS: BOUNDS.toFixed(1),
     resolution: `vec2(${WIDTH.toFixed(1)}, ${HEIGHT.toFixed(1)})`,
   },
   uniforms: {
     heightmap: { value: null },
     mousePos: { value: new THREE.Vector2(10000, 10000) },
-    mouseSize: { value: 20.0 },
+    mouseSize: { value: 0.04 },
     viscosityConstant: { value: 0.03 },
   },
   vertexShader: passThroughVertexShader,
@@ -50,19 +49,16 @@ const scene = new THREE.Scene();
 const camera = new THREE.Camera();
 
 const material = new THREE.ShaderMaterial({
-  defines: { WIDTH: WIDTH.toFixed(1), HEIGHT: HEIGHT.toFixed(1) },
   uniforms: { heightmap: { value: null } },
   vertexShader,
   fragmentShader,
 });
-scene.add(
-  new THREE.Mesh(new THREE.PlaneBufferGeometry(BOUNDS, BOUNDS), material)
-);
+scene.add(new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), material));
 
 function setMouseCoords(x, y) {
   computeMaterial.uniforms.mousePos.value.set(
-    (x / renderer.domElement.clientWidth - 0.5) * BOUNDS,
-    (-y / renderer.domElement.clientHeight + 0.5) * BOUNDS
+    x / renderer.domElement.clientWidth,
+    1 - y / renderer.domElement.clientHeight
   );
 }
 
