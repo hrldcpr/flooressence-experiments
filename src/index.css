@@ -3,3 +3,11 @@
 body {
   touch-action: none;
 }
+
+canvas {
+  background-color: black;
+  background-image: url('g.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
