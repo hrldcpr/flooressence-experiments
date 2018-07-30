@@ -62,8 +62,6 @@ function setMouseCoords(x, y) {
   );
 }
 
-alert('v3');
-
 document.addEventListener('mousemove', event =>
   setMouseCoords(event.clientX, event.clientY)
 );
