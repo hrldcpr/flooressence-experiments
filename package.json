@@ -8,16 +8,14 @@
     "start": "parcel src/index.html"
   },
   "dependencies": {
-    "@types/three": "^0.89.12",
-    "sanitize.css": "^5.0.0",
-    "three": "^0.91.0"
+    "sanitize.css": "^11.0.0",
+    "three": "^0.110.0"
   },
   "devDependencies": {
-    "gh-pages": "^1.1.0",
+    "gh-pages": "^2.1.1",
     "parcel-bundler": "^1.6.2",
-    "parcel-plugin-typescript": "^0.7.0",
     "prettier": "^1.11.1",
-    "typescript": "^2.7.2"
+    "typescript": "^3.7.2"
   },
   "prettier": {
     "singleQuote": true,

@@ -52,6 +52,18 @@ const material = new THREE.ShaderMaterial({
 });
 scene.add(new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), material));
 
+const renderWithTarget = (
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  target: THREE.RenderTarget
+) => {
+  const originalTarget = renderer.getRenderTarget();
+  renderer.setRenderTarget(target);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(originalTarget);
+};
+
 function setMouseCoords(x, y) {
   computeMaterial.uniforms.mousePos.value.set(
     x / renderer.domElement.clientWidth,
@@ -88,7 +100,7 @@ let pong = ping.clone();
 
 function animate() {
   computeMaterial.uniforms.heightmap.value = ping.texture;
-  renderer.render(computeScene, computeCamera, pong);
+  renderWithTarget(renderer, computeScene, computeCamera, pong);
   [ping, pong] = [pong, ping];
 
   material.uniforms.heightmap.value = ping.texture;
