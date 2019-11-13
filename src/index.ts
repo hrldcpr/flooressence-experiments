@@ -9,9 +9,6 @@ import fragmentShader from './fragment_shader';
 const WIDTH = 128;
 const HEIGHT = 128;
 
-// Water size in system units
-const BOUNDS = 512;
-
 const renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
